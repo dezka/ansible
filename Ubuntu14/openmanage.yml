@@ -1,0 +1,19 @@
+---
+- hosts: [hosts]
+  become: True
+  remote_user: dennis
+  tasks:
+    - name: Installing prereq's
+      shell: sudo echo 'deb http://linux.dell.com/repo/community/ubuntu trusty openmanage' | sudo tee -a /etc/apt/sources.list.d/linux.dell.com.sources.list && gpg --keyserver pool.sks-keyservers.net --recv-key 1285491434D8786F && gpg -a --export 1285491434D8786F | sudo apt-key add - && sudo apt-get update
+      args:
+        executable: /bin/bash
+
+    - name: Install openmanage
+      apt:
+        name: srvadmin-all
+        state: present
+
+    - name: Start openmanage
+      shell: sudo service dsm_om_connsvc start && sudo update-rc.d dsm_om_connsvc defaults
+      args:
+        executable: /bin/bash
