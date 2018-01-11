@@ -7,10 +7,20 @@
   
   pre_tasks:
     - name: apt-get update and upgrade 
-      apt: update_cache=yes
-      apt: upgrade=yes
+      apt: 
+        update_cache: yes
+      
+      apt: 
+        upgrade: yes
+
     - name: install things
-      apt: name=etckeeper,nscd,htop state=installed
+      apt: 
+        name: "{{ item }}"
+        state: installed
+      with_items:
+        - etckeeper
+        - nscd
+        - htop
 
   tasks:
     - name: Improve Host file
