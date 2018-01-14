@@ -1,0 +1,176 @@
+---
+- hosts: [hosts]
+  become: True
+  remote_user: dennis
+  vars:
+    data_dir1: /mnt/Data1
+    data_dir2: /mnt/Data2
+    data_dir3: /mnt/Data3
+    data_dir4: /mnt/Data4
+  pre_tasks:
+    - name: yum upgrade
+      yum: name=* state=latest
+
+  roles:
+    - mrlesmithjr.snmpd
+    - hudecof.ntp
+
+  tasks:
+#    - name: download and import epel key (7)
+#      rpm_key:
+#        key: https://getfedora.org/static/352C64E5.txt
+#        state: present
+#      when: "ansible_lsb.major_release == 7"
+#      ignore_errors: yes
+
+#    - name: download and import epel key (6)
+#      rpm_key:
+#        key: https://getfedora.org/static/0608B895.txt
+#        state: present
+#      when: "ansible_lsb.major_release == 6"
+#      ignore_errors: yes
+
+    - name: install things
+      yum:
+        name: nscd,wget,vim,net-tools
+        state: latest
+
+    - name: stop firewall
+      service:
+        name: firewalld
+        state: stopped
+      ignore_errors: yes
+
+    - name: disable firewalld
+      systemd:
+        name: firewalld
+        enabled: no
+      ignore_errors: yes
+
+    - name: Improve Host file
+      lineinfile:
+        dest: /etc/hosts
+        line: '{{ansible_default_ipv4.address}} {{ansible_hostname}}.domain.com {{ansible_hostname}}'
+        insertbefore: '^127.0.0.1'
+
+    - shell: /bin/true
+      register: normal_task_list
+
+    - name: Configure data partition if data drive exists
+      shell: echo -e "n\n\n\n\n\nw" | sudo fdisk /dev/sdb && sudo mkfs.ext4 /dev/sdb1
+      args:
+        executable: /bin/bash
+      when: normal_task_list is not defined
+      tags:
+        - b
+
+    - name: Configure data partition if data drive exists
+      shell: echo -e "n\n\n\n\n\nw" | sudo fdisk /dev/sdc && sudo mkfs.ext4 /dev/sdc1
+      args:
+        executable: /bin/bash
+      when: normal_task_list is not defined
+      tags:
+        - c
+
+    - name: Configure data partition if data drive exists
+      shell: echo -e "n\n\n\n\n\nw" | sudo fdisk /dev/sdd && sudo mkfs.ext4 /dev/sdd1
+      args:
+        executable: /bin/bash
+      when: normal_task_list is not defined
+      tags:
+        - d
+
+    - name: Configure data partition if data drive exists
+      shell: echo -e "n\n\n\n\n\nw" | sudo fdisk /dev/sde && sudo mkfs.ext4 /dev/sde1
+      args:
+        executable: /bin/bash
+      when: normal_task_list is not defined
+      tags:
+        - e
+
+    - name: Get blkid output
+      shell: blkid /dev/sdb1 | awk -F "\"" '{print $2}'
+      register: uuid
+      when: normal_task_list is not defined
+      tags:
+        - b
+
+    - name: Get blkid output
+      shell: blkid /dev/sdc1 | awk -F "\"" '{print $2}'
+      register: uuid
+      when: normal_task_list is not defined
+      tags:
+        - c
+
+    - name: Get blkid output
+      shell: blkid /dev/sdd1 | awk -F "\"" '{print $2}'
+      register: uuid
+      when: normal_task_list is not defined
+      tags:
+        - d
+
+    - name: Get blkid output
+      shell: blkid /dev/sde1 | awk -F "\"" '{print $2}'
+      register: uuid
+      when: normal_task_list is not defined
+      tags:
+        - e
+
+    - name: Insert to etc fstab to mount
+      lineinfile:
+        dest: /etc/fstab
+        line: 'UUID={{ uuid.stdout }} {{data_dir1}} ext4 defaults 0 0'
+      when: normal_task_list is not defined
+      tags:
+        - b
+
+    - name: Insert to etc fstab to mount
+      lineinfile:
+        dest: /etc/fstab
+        line: 'UUID={{ uuid.stdout }} {{data_dir2}} ext4 defaults 0 0'
+      when: normal_task_list is not defined
+      tags:
+        - c
+
+    - name: Insert to etc fstab to mount
+      lineinfile:
+        dest: /etc/fstab
+        line: 'UUID={{ uuid.stdout }} {{data_dir3}} ext4 defaults 0 0'
+      when: normal_task_list is not defined
+      tags:
+        - d
+
+    - name: Insert to etc fstab to mount
+      lineinfile:
+        dest: /etc/fstab
+        line: 'UUID={{ uuid.stdout }} {{data_dir4}} ext4 defaults 0 0'
+      when: normal_task_list is not defined
+      tags:
+        - e
+
+    - name: Create the mount directory
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: 0755
+      when: normal_task_list is not defined
+      with_items:
+        - /data
+        - /mnt/Data1
+        - /mnt/Data2
+        - /mnt/Data3
+        - /mnt/Data4
+      tags:
+        - b
+        - c
+        - d
+        - e
+
+    - name: mount
+      shell: mount -a
+      when: normal_task_list is not defined
+      tags:
+        - b
+        - c
+        - d
+        - e

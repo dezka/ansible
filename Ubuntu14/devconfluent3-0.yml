@@ -1,0 +1,31 @@
+---
+- hosts: [hosts]
+  become: True
+  remote_user: dennis
+  roles:
+     - { role: jpnewman.java, tags: ["init"] }
+     - dbielinski.confluent.dev
+
+  tasks:
+    - name: Install Mono Key
+      apt_key:
+        keyserver: keyserver.ubuntu.com
+        id: 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
+      when: "'con' or 'stream' in inventory_hostname"
+
+    - name: Add mono repo
+      apt_repository:
+        repo: deb http://download.mono-project.com/repo/debian wheezy main
+        state: present
+      when: "'con' or 'stream' in inventory_hostname"
+
+    - name: Update cache
+      apt:
+        update_cache: yes
+      when: "'con' or 'stream' in inventory_hostname"
+
+    - name: Install mono
+      apt:
+        name: mono-complete
+        state: present
+      when: "'con' or 'stream' in inventory_hostname"

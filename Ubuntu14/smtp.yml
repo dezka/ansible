@@ -1,0 +1,6 @@
+---
+ - hosts: [hosts]
+   become: True
+   remote_user: dennis
+   roles:
+     - dbielinski.ssmtp

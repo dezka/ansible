@@ -1,0 +1,6 @@
+---
+# defaults file for dbielinski.filebeat
+#logsearchcluster: logsearch-prod
+
+####### IF your environment is dev, then uncomment this one and switch it
+logsearchcluster: devlogsearch

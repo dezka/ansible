@@ -1,0 +1,8 @@
+---
+# defaults file for dbielinski.confluent
+
+#Dev / Prod, comment in and out as needed per env.
+#zookeepers: devzookeeper1a:2181,devzookeeper1b:2181,devzookeeper1c:2181
+zookeepers: zookeeper1a:2181,zookeeper1b:2181,zookeeper1c:2181
+#brokers: devkafka1a:9092,devkafka1b:9092,devkafka1c:9092
+brokers: kafka1a:9092,kafka1b:9092,kafka1c:9092

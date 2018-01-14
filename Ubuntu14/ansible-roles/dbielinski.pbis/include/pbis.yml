@@ -1,0 +1,8 @@
+---
+
+- expect:
+    command: ./home/dennis/Downloads/pbis-open-8.2.1.2979.linux.x86_64.deb.sh
+    responses:
+      (?i)(yes/no): "yes"
+      (?i)(yes/no): "yes"
+

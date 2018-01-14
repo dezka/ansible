@@ -1,0 +1,153 @@
+---
+# Install prereqs
+   
+   - name: Copy over JAVA opts file
+     copy:
+       src: oraclejdk.sh
+       dest: /etc/profile.d/oraclejdk.sh
+       owner: root
+       group: root
+       mode: 0644
+
+   - name: Create Kafka service user
+     user:
+       name: kafka
+       createhome: no
+       shell: /bin/false
+       system: yes
+       state: present
+
+   - name: Add the Confluent Apt Key if not present
+     apt_key:
+       url: http://packages.confluent.io/deb/3.1/archive.key
+       state: present
+
+   - name: Add the Confluent Repo
+     apt_repository:
+       repo: 'deb [arch=amd64] http://packages.confluent.io/deb/3.1 stable main'
+       state: present
+
+   - name: Update apt for the new repo
+     apt:
+       update_cache: yes
+
+   - name: Install Confluent 3.1
+     apt:
+       name: confluent-platform-2.11
+       state: present
+
+   - name: Copy over startup scripts
+     copy:
+       src: "{{ item }}"
+       dest: /etc/init/
+       owner: root
+       group: root
+       mode: 0644
+     with_items:
+       - kafka-rest.conf
+       - schema-registry.conf
+       - kafka-connect.conf
+     when: "'stream' not in inventory_hostname"
+
+   - name: Copy over special startup scripts depending on if machine is a broker
+     copy:
+       src: "{{ item }}"
+       dest: /etc/init/
+       owner: root
+       group: root
+       mode: 0644
+     with_items:
+       - kafka.conf
+     when: "'con' and 'stream' not in inventory_hostname"
+
+   - name: Create directories
+     file:
+       path: "{{ item }}"
+       state: directory
+       owner: kafka
+       group: kafka
+       mode: 0755
+     with_items:
+       - /var/log/kafka
+       - /var/log/schema-registry
+       - /etc/kafka-connect
+       - /data
+
+# need to set the ulimit somewhere around here.
+
+   - name: Push config file for broker
+     template:
+       src: "{{ item }}"
+       dest: /etc/kafka/
+       owner: kafka
+       group: kafka
+       mode: 0644
+     with_items:
+       - server.properties
+     when: "'con' and 'stream' not in inventory_hostname"
+
+   - name: Push config files for Kafka Rest
+     template:
+       src: "{{ item }}"
+       dest: /etc/kafka-rest/
+       owner: kafka
+       group: kafka
+       mode: 0644
+     with_items:
+       - kafka-rest.properties
+
+   - name: Push config files for schema registry
+     template:
+       src: "{{ item }}"
+       dest: /etc/schema-registry/
+       owner: kafka
+       group: kafka
+       mode: 0644
+     with_items:
+       - schema-registry.properties
+       - connect-avro-distributed.properties
+
+   - name: Push config for dist
+     template:
+       src: "{{ item }}"
+       dest: /etc/kafka/
+       owner: kafka
+       group: kafka
+       mode: 0644
+     with_items:
+       - connect-distributed.properties
+
+   - name: Push config for kafka-connect
+     template:
+       src: "{{ item }}"
+       dest: /etc/kafka-connect/
+       owner: kafka
+       group: kafka
+       mode: 0644
+     with_items:
+       - kafka-connect/connect-avro-distributed.properties
+       - kafka-connect/connect-avro-standalone.properties
+
+   - name: Starting Services
+     service:
+       name: "{{ item }}"
+       state: started
+     with_items:
+       - kafka-rest
+       - schema-registry
+       - kafka-connect
+     when: "'stream' not in inventory_hostname"
+
+   - name: Starting broker if exists
+     service:
+       name: kafka
+       state: started
+     when: "'con' and 'stream' not in inventory_hostname"
+
+   - name: Update visudo so octopus user has NOPASSWD set
+     lineinfile: 
+       dest: /etc/sudoers
+       state: present
+       regexp: '^%HQ\\\\linuxoctopus'
+       line: '%HQ\\linuxoctopus ALL=(ALL) NOPASSWD: ALL'
+       validate: 'visudo -cf %s'

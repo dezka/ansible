@@ -1,0 +1,95 @@
+---
+   - name: Install expect
+     apt:
+       package: expect
+     tags:
+       - expect
+
+   - name: Upload pbis install
+     copy:
+       src: /etc/ansible/roles/dbielinski.pbis/files/pbis-open-8.2.1.2979.linux.x86_64.deb.sh
+       dest: /tmp
+       mode: 0755
+     tags:
+       - copy
+
+   - name: Install PBIS
+     script: /etc/ansible/roles/dbielinski.pbis/tasks/installpbis.sh
+     tags:
+       - install
+
+   - name: Reboot
+     shell: shutdown -r now
+     tags:
+       - reboot
+
+   - name: Wait for reboot
+     local_action: wait_for
+           host={{ ansible_ssh_host }}
+           port=22
+           delay=5
+           timeout=300
+     sudo: false
+     tags:
+        - wait
+
+   - name: Run dpkg to ensure proper registry import
+     shell: dpkg --configure -a     
+
+   - name: Join machine to domain
+     shell: /opt/pbis/bin/domainjoin-cli join domain.com {{ username }} {{ password }}
+
+   - name: Reboot
+     shell: shutdown -r now
+     tags:
+       - reboot
+
+   - name: Wait for reboot
+     local_action: wait_for
+           host={{ ansible_ssh_host }}
+           port=22
+           delay=5
+           timeout=300
+     sudo: false
+
+   - name: Configure pbis
+     script: /etc/ansible/roles/dbielinski.pbis/templates/pbis-config.sh
+     tags:
+       - config
+
+   - name: Reboot
+     shell: shutdown -r now
+     tags:
+       - reboot
+
+   - name: Wait for reboot
+     local_action: wait_for
+           host={{ ansible_ssh_host }}
+           port=22
+           delay=5
+           timeout=300
+     sudo: false
+
+   - name: Adding Groups to Sudoers File
+     lineinfile: dest=/etc/sudoers state=present line='%{{ ad_group1 }} ALL=(ALL) ALL' validate='visudo -cf %s'
+     tags:
+       - addgroup
+
+   - name: Adding Secondary Groups to Sudoers File
+     lineinfile: dest=/etc/sudoers state=present line='%{{ ad_group2 }} ALL=(ALL) ALL' validate='visudo -cf %s'
+     ignore_errors: yes
+
+   - name: Adding Third Group to Sudoers File if it exists
+     lineinfile: dest=/etc/sudoers state=present line='%{{ ad_group3 }} ALL=(ALL) ALL' validate='visudo -cf %s'
+     ignore_errors: yes
+
+   - name: reboot
+     shell: shutdown -r now
+
+   - name: waiting for server to restart...
+     local_action: wait_for
+           host={{ ansible_ssh_host }}
+           port=22
+           delay=5
+           timeout=300
+     sudo: false

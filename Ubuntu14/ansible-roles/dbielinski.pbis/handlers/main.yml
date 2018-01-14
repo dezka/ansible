@@ -1,0 +1,15 @@
+---
+# handlers file for pbis
+
+   - name: config pbis 
+     shell: ./home/dennis/pbis-config.sh
+     register: configpbis
+#   - name: config pbis shell
+#     command: /bin/bash /path/script.sh #/opt/pbis/bin/config LoginShellTemplate /bin/bash
+#     command: /bin/bash /path/script.sh #/opt/pbis/bin/config Local_LoginShellTemplate /bin/bash
+
+#   - name: config AD groups for access
+#     command: /bin/bash /path/script.sh # /opt/pbis/bin/config RequireMembershipOf HQ\\domain^admins HQ\\linuxsudo
+
+#   - name: reboot
+#     shell: shutdown -r now

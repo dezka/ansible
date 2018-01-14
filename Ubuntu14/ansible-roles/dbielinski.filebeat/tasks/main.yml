@@ -1,0 +1,99 @@
+---
+# tasks file for dbielinski.filebeat
+
+   - name: Create filebeat service user
+     user:
+       name: filebeat
+       createhome: no
+       shell: /bin/false
+       system: yes
+       state: present
+
+   - name: Add Filebeat key for apt
+     apt_key:
+       url: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+       state: present
+
+   - name: Ensure apt-transport-https is installed for the repo
+     apt:
+       name: apt-transport-https
+       state: installed  
+
+   - name: Add Filebeat repo
+     apt_repository:
+       repo: 'deb https://artifacts.elastic.co/packages/5.x/apt stable main'
+       state: present
+
+   - name: Update apt for new repo
+     apt:
+       update_cache: yes
+
+   - name: install filebeat
+     apt:
+       name: filebeat
+       state: installed
+
+   - name: ensure dirs are created and perms are set
+     file:
+       path: "{{ item }}"
+       owner: filebeat
+       group: filebeat
+       mode: u=rwX,g=rX,o=rX
+       state: directory
+       recurse: yes
+     with_items:
+       - /var/log/filebeat
+       - /etc/filebeat
+       - /usr/share/filebeat/bin/data
+
+   - name: install yml file depending on machine (streams)
+     template:
+       src: filebeatstreams.yml
+       dest: /etc/filebeat/filebeat.yml
+       owner: filebeat
+       group: filebeat
+       mode: 0755
+     when: "'stream' in inventory_hostname"
+
+   - name: install yml file depending on machine (connector)
+     template:
+       src: filebeatcons.yml
+       dest: /etc/filebeat/filebeat.yml
+       owner: filebeat
+       group: filebeat
+       mode: 0755
+     when: "'con' in inventory_hostname"
+
+   - name: install yml file depending on machine (zookeeper)
+     template:
+       src: filebeatzookeeper.yml
+       dest: /etc/filebeat/filebeat.yml
+       owner: filebeat
+       group: filebeat
+       mode: 0755
+     when: "'zookeeper' in inventory_hostname"
+
+   - name: install yml file depending on machine (broker)
+     template:
+       src: filebeatbroker.yml
+       dest: /etc/filebeat/filebeat.yml
+       owner: filebeat
+       group: filebeat
+       mode: 0755
+     when:
+       - "'streams' not in inventory_hostname"
+       - "'con' not in inventory_hostname"
+       - "'zookeeper' not in inventory_hostname"
+
+   - name: install init file
+     template:
+       src: filebeat.conf
+       dest: /etc/init/
+       owner: root
+       group: root
+       mode: 0644
+
+   - name: start up filebeat
+     service:
+       name: filebeat
+       state: restarted 

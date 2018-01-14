@@ -1,0 +1,17 @@
+---
+# tasks file for dbielinski.ssmtp
+   - name: Install SSMTP & mailutils
+     apt:
+       name: "{{ item }}"
+       state: present
+     with_items:
+       - ssmtp
+       - mailutils
+
+   - name: Copy over ssmtp config
+     template:
+       src: ssmtp.conf
+       dest: /etc/ssmtp/
+       owner: root
+       group: root
+       mode: 0644

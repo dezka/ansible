@@ -1,0 +1,10 @@
+---
+# vars file for pbis
+username: dbielinski
+password: PASSWORD
+url: "http://packages.domain.local/pbis/"
+mydomain: domain.com
+my_package_name: pbis-open-8.2.1.2979.linux.x86_64.deb.sh
+ad_group1: HQ\\Domain^Admins
+ad_group2:
+ad_group3:
